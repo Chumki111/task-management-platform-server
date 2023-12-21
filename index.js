@@ -47,7 +47,8 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
     try {
       // Connect the client to the server	(optional starting in v4.7)
       await client.connect();
-
+      const usersCollection = client.db('taskManagement').collection('users')
+      const tasksCollection = client.db('taskManagement').collection('tasks')
 
       app.post('/jwt', async (req, res) => {
         const user = req.body
@@ -79,7 +80,37 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
           res.status(500).send(err)
         }
       })
-      // Send a ping to confirm a successful connection
+
+
+ // Save or modify user email, status in DB
+ app.put('/users/:email', async (req, res) => {
+    const email = req.params.email
+    const user = req.body
+    const query = { email: email }
+    const options = { upsert: true }
+    const isExist = await usersCollection.findOne(query)
+    console.log('User found?----->', isExist)
+    if (isExist) return res.send(isExist)
+    const result = await usersCollection.updateOne(
+      query,
+      {
+        $set: { ...user, timestamp: Date.now() },
+      },
+      options
+    )
+    res.send(result)
+  })
+
+
+
+ // Save a task in database
+ app.post('/tasks', verifyToken, async (req, res) => {
+  const task = req.body
+  const result = await tasksCollection.insertOne(task)
+  res.send(result)
+})
+
+// Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
       console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
