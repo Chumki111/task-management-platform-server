@@ -3,7 +3,7 @@ const app = express()
 require('dotenv').config()
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
-const { MongoClient, ServerApiVersion} = require('mongodb')
+const { MongoClient, ServerApiVersion, ObjectId} = require('mongodb')
 const jwt = require('jsonwebtoken')
 const port = process.env.PORT || 5000
 
@@ -110,6 +110,28 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
   res.send(result)
 })
 
+ //get all tasks
+ app.get('/tasks/:email', verifyToken, async (req, res) => {
+  const email = req.params.email
+  const result = await tasksCollection
+    .find({ email:email})
+    .toArray()
+  res.send(result)
+})
+// delete task 
+app.delete('/tasks/:id', verifyToken, async (req, res) => {
+  const id = req.params.id;
+  const query = { _id: new ObjectId(id) }
+  const result = await tasksCollection.deleteOne(query);
+  res.send(result);
+})
+
+ // Get single room data
+ app.get('/task/:id', async (req, res) => {
+  const id = req.params.id
+  const result = await tasksCollection.findOne({ _id: new ObjectId(id) })
+  res.send(result)
+})
 // Send a ping to confirm a successful connection
       await client.db("admin").command({ ping: 1 });
       console.log("Pinged your deployment. You successfully connected to MongoDB!");
