@@ -9,7 +9,7 @@ const port = process.env.PORT || 5000
 
 // middleware
 const corsOptions = {
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: ['https://jobs-task-management.web.app', 'https://jobs-task-management.firebaseapp.com'],
     credentials: true,
     optionSuccessStatus: 200,
   }
@@ -46,7 +46,7 @@ const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster
   async function run() {
     try {
       // Connect the client to the server	(optional starting in v4.7)
-      await client.connect();
+      // await client.connect();
       const usersCollection = client.db('taskManagement').collection('users')
       const tasksCollection = client.db('taskManagement').collection('tasks')
 
@@ -132,9 +132,42 @@ app.delete('/tasks/:id', verifyToken, async (req, res) => {
   const result = await tasksCollection.findOne({ _id: new ObjectId(id) })
   res.send(result)
 })
+
+  // stats or analytics
+  app.get('/tasks-stats', async (req, res) => {
+    const tasks = await tasksCollection.estimatedDocumentCount();
+    
+    res.send({
+        tasks
+
+    })
+})
+
+app.patch('/tasks/:id', async (req, res) => {
+  const item = req.body;
+  const id = req.params.id;
+  console.log(item, id);
+  const filter = { _id: new ObjectId (id )}
+  const updatedDoc = {
+    $set: {
+     email: item.email,
+      name: item.displayName,
+      photo: item.photoURL,
+      title: item.title,
+      priority: item.priority,
+      deadline: item.deadline,
+      description: item.description
+    }
+
+
+  }
+  const result = await tasksCollection.updateOne(filter, updatedDoc);
+  res.send(result)
+})
+
 // Send a ping to confirm a successful connection
-      await client.db("admin").command({ ping: 1 });
-      console.log("Pinged your deployment. You successfully connected to MongoDB!");
+      // await client.db("admin").command({ ping: 1 });
+      // console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
       // Ensures that the client will close when you finish/error
     //   await client.close();
